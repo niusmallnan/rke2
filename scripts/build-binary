@@ -25,7 +25,7 @@ VERSION_FLAGS="
         -X ${K3S_PKG}/pkg/version.Version=${VERSION}
         -X ${RKE2_PKG}/pkg/images.DefaultRegistry=${REGISTRY}
         -X ${RKE2_PKG}/pkg/images.DefaultEtcdImage=rancher/hardened-etcd:${ETCD_VERSION}-build20220504
-        -X ${RKE2_PKG}/pkg/images.DefaultKubernetesImage=rancher/hardened-kubernetes:${KUBERNETES_IMAGE_TAG}
+        -X ${RKE2_PKG}/pkg/images.DefaultKubernetesImage=${REPO}/hardened-kubernetes:${KUBERNETES_IMAGE_TAG}
         -X ${RKE2_PKG}/pkg/images.DefaultPauseImage=rancher/pause:${PAUSE_VERSION}
         -X ${RKE2_PKG}/pkg/images.DefaultRuntimeImage=${REPO}/${PROG}-runtime:${DOCKERIZED_VERSION}
         -X ${RKE2_PKG}/pkg/images.DefaultCloudControllerManagerImage=rancher/rke2-cloud-provider:${CCM_VERSION}
@@ -45,18 +45,11 @@ echo ${DEBUG_GO_GCFLAGS}
 go build \
     -tags "${GO_BUILDTAGS}" \
     ${GO_GCFLAGS} ${GO_BUILD_FLAGS} \
-    -o bin/${PROG} \
+    -o bin/${HACKING_PROG} \
     -ldflags "${GO_LDFLAGS} ${VERSION_FLAGS}" \
     ${GO_TAGS}
 
 # assert that rke2 is fully statically linked
 if type -a go-assert-static.sh >/dev/null 2>&1; then
-    go-assert-static.sh bin/${PROG}
-fi
-
-if [ "${GOARCH}" != "s390x" ]; then
-  # assert that rke2 is linked to goboring
-  if type -a go-assert-boring.sh >/dev/null 2>&1; then
-    go-assert-boring.sh bin/${PROG}
-  fi
+    go-assert-static.sh bin/${HACKING_PROG}
 fi

@@ -1,14 +1,6 @@
-image: rancher/rke2-runtime:{{replace "+" "-" build.tag}}
+image: niusmallnan/rke2-runtime:{{replace "+" "-" build.tag}}
 manifests:
-  - image: rancher/rke2-runtime:{{replace "+" "-" build.tag}}-linux-amd64
-    platform: 
-      architecture: amd64
-      os: linux
-  - image: rancher/rke2-runtime:{{replace "+" "-" build.tag}}-windows-amd64
-    platform: 
-      architecture: amd64
-      os: windows
-  - image: rancher/rke2-runtime:{{replace "+" "-" build.tag}}-linux-s390x
+  - image: niusmallnan/rke2-runtime:{{replace "+" "-" build.tag}}-linux-amd64
     platform:
-      architecture: s390x
+      architecture: amd64
       os: linux

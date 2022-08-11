@@ -1,0 +1,112 @@
+---
+kind: pipeline
+type: docker
+name: build-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  image: rancher/dapper:v0.5.8
+  commands:
+  - dapper -f Dockerfile --target dapper make build-binary
+  - dapper -f Dockerfile --target dapper ./scripts/package-binary
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+  when:
+    event:
+    - tag
+    ref:
+    - refs/head/native-dev
+    - refs/tags/*
+
+- name: publish-dist-artifacts
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_token
+    checksum:
+    - sha256
+    checksum_file: CHECKSUMsum-amd64.txt
+    checksum_flatten: true
+    files:
+    - dist/artifacts/*
+    prerelease: true
+  when:
+    event:
+    - tag
+    ref:
+    - refs/head/native-dev
+    - refs/tags/*
+
+- name: publish-image-runtime
+  image: niusmallnan/hardened-build-base:v1.17.11n1
+  commands:
+  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  - REPO=niusmallnan DRONE_TAG=${DRONE_TAG} make publish-image-runtime
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+    DOCKER_USERNAME:
+      from_secret: docker_username
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+  when:
+    event:
+    - tag
+    ref:
+    - refs/head/native-dev
+    - refs/tags/*
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+
+trigger:
+  event:
+    include:
+    - tag
+
+node:
+  instance: agent-amd64
+---
+
+kind: pipeline
+type: docker
+name: manifest
+platform:
+  os: linux
+  arch: amd64
+steps:
+  - name: push-runtime-manifest
+    image: plugins/manifest
+    settings:
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      spec: manifest-runtime.tmpl
+      ignore_missing: true
+    when:
+      event:
+      - tag
+      ref:
+      - refs/head/native-dev
+      - refs/tags/*
+
+node:
+  instance: agent-amd64
+
+trigger:
+  event:
+    include:
+    - tag
+
+depends_on:
+  - build-amd64
+...
